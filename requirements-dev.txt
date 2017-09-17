@@ -1,3 +1,4 @@
 pytest
+asynctest
 pytest-cov
 setuptools-markdown
