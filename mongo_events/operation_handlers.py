@@ -1,6 +1,11 @@
 import abc
+from typing import Dict
 
+from bson import ObjectId
+from motor.motor_asyncio import AsyncIOMotorCollection
 from pathdict import PathDict
+
+from mongo_events.conf import logger
 
 
 class Operations:
@@ -45,3 +50,35 @@ class OperationHandler(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     async def on_delete(self, operation):
         pass
+
+
+class LiveCollection(OperationHandler):
+    def __init__(self,
+                 collection: Dict[ObjectId, Dict],
+                 remote_collection: AsyncIOMotorCollection):
+        super().__init__()
+        self.collection = collection
+        self.remote_collection = remote_collection
+
+    @classmethod
+    async def init_async(cls, remote_collection: AsyncIOMotorCollection):
+        cursor = remote_collection.find({})
+        collection = {doc['_id']: Document(doc) async for doc in cursor}
+        return cls(collection, remote_collection)
+
+    async def on_update(self, operation):
+        doc = self.collection[operation['o2']['_id']]
+        change = operation['o']
+        if '$set' in change:
+            doc.update(change['$set'])
+            logger.debug({'action': 'update', 'change': change['$set']})
+        return doc
+
+    async def on_insert(self, operation):
+        doc = operation['o']
+        self.collection[doc['_id']] = Document(doc)
+        return doc
+
+    async def on_delete(self, operation):
+        doc = operation['o']
+        del self.collection[doc['_id']]
