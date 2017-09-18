@@ -3,23 +3,9 @@ from typing import Dict
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorCollection
-from pathdict import PathDict
 
 from mongo_observer.conf import logger
-
-
-class Operations:
-    INSERT = 'i'
-    UPDATE = 'u'
-    DELETE = 'd'
-    COMMAND = 'c'
-    DB_DECLARE = 'db'
-    NO_OP = 'n'
-
-
-class Document(PathDict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, create_if_not_exists=True)
+from mongo_observer.models import Operations, Document
 
 
 class OperationHandler(metaclass=abc.ABCMeta):
