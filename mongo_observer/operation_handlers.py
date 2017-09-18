@@ -5,7 +5,7 @@ from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorCollection
 from pathdict import PathDict
 
-from mongo_events.conf import logger
+from mongo_observer.conf import logger
 
 
 class Operations:
@@ -82,3 +82,21 @@ class LiveCollection(OperationHandler):
     async def on_delete(self, operation):
         doc = operation['o']
         del self.collection[doc['_id']]
+
+
+class BuyboxChangeNotifier(LiveCollection):
+    def get_buybox_change(self, previous_state, current_state):
+        if before_update['customer']['is_buybox']:
+            pass
+
+    async def on_update(self, operation):
+        # comparar o e o2
+        before_update = self.collection[operation['o2']['_id']].copy()
+        await super().on_update(operation)
+
+        after_update = self.collection[operation['o2']['_id']]
+        if before_update['customer']['is_buybox'] != after_update['customer']['is_buybox']:
+            if after_update['customer']['is_buybox'] is True:
+                print("Ganhou buybox")
+            else:
+                print("Perdeu buybox")

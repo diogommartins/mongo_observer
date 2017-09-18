@@ -1,7 +1,7 @@
 from pymongo import DESCENDING, CursorType
 from asynctest import TestCase, CoroutineMock, Mock, patch, call
 
-from mongo_events.observer import Observer, ShouldStopObservation
+from mongo_observer.observer import Observer, ShouldStopObservation
 
 
 class ObserverTests(TestCase):

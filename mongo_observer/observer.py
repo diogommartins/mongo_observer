@@ -4,8 +4,8 @@ from typing import Callable, Coroutine
 from bson import Timestamp
 from pymongo import CursorType, DESCENDING
 
-from mongo_events import conf
-from mongo_events.operation_handlers import OperationHandler
+from mongo_observer import conf
+from mongo_observer.operation_handlers import OperationHandler
 
 
 class ShouldStopObservation(KeyboardInterrupt):
