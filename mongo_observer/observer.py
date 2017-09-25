@@ -77,9 +77,8 @@ class Observer:
                 if await cursor.fetch_next:
                     doc = cursor.next_object()
                     await self.operation_handler.handle(operation=doc)
-                else:
-                    if self.on_nothing_to_fetch_on_cursor:
-                        await self.on_nothing_to_fetch_on_cursor()
+                elif self.on_nothing_to_fetch_on_cursor:
+                    await self.on_nothing_to_fetch_on_cursor()
         except ShouldStopObservation:
             self.logger.debug('Stopping observer')
             raise
