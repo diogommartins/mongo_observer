@@ -21,7 +21,8 @@ class Observer:
                  on_nothing_to_fetch_on_cursor: Callable[..., Coroutine]):
         """
         :param oplog: Operation log collection
-        :param operation_handler:
+        :param operation_handler: Delegate object responsible of handling
+        operations
         :param namespace_filter: `database.collection` affected by the operation
         :param timestamp: `ts` attribute on document root representing the
         timestamp of the operation
