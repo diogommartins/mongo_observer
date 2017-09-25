@@ -20,8 +20,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
         try:
             handler = self.handlers[operation['op']]
         except KeyError:
-            pass  # Unintersting operation
-            print("skipping operation ", operation) # todo: remove debug
+            logger.debug({'info': 'skipping operation', 'operation': operation})
         else:
             await handler(operation)
 
