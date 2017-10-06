@@ -1,5 +1,5 @@
 import abc
-from typing import Dict
+from typing import Dict, Any
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorCollection
@@ -16,7 +16,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
             Operations.DELETE: self.on_delete
         }
 
-    async def handle(self, operation):
+    async def handle(self, operation: Dict[str, Any]):
         try:
             handler = self.handlers[operation['op']]
         except KeyError:
@@ -25,7 +25,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
             await handler(operation)
 
     @abc.abstractmethod
-    async def on_insert(self, operation):
+    async def on_insert(self, operation: Dict[str, Any]):
         """
         :param operation: A dict containing a document corresponding
         to an operation on oplog. It will contain the following keys:
@@ -40,7 +40,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def on_update(self, operation):
+    async def on_update(self, operation: Dict[str, Any]):
         """
         :param operation: A dict containing a document corresponding
         to an operation on oplog. It will contain the following keys:
@@ -56,7 +56,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def on_delete(self, operation):
+    async def on_delete(self, operation: Dict[str, Any]):
         """
         :param operation: A dict containing a document corresponding
         to an operation on oplog. It will contain the following keys:
@@ -86,7 +86,7 @@ class LiveCollection(OperationHandler):
         collection = {doc['_id']: Document(doc) async for doc in cursor}
         return cls(collection, remote_collection)
 
-    async def on_update(self, operation):
+    async def on_update(self, operation: Dict[str, Any]):
         doc = self.collection[operation['o2']['_id']]
         change = operation['o']
         if '$set' in change:
@@ -94,22 +94,24 @@ class LiveCollection(OperationHandler):
             logger.debug({'action': 'update', 'change': change['$set']})
         return doc
 
-    async def on_insert(self, operation):
+    async def on_insert(self, operation: Dict[str, Any]):
         doc = operation['o']
         self.collection[doc['_id']] = Document(doc)
         return doc
 
-    async def on_delete(self, operation):
+    async def on_delete(self, operation: Dict[str, Any]):
         doc = operation['o']
         del self.collection[doc['_id']]
 
 
 class BuyboxChangeNotifier(LiveCollection):
-    def get_buybox_change(self, previous_state, current_state):
+    def get_buybox_change(self,
+                          previous_state: Dict[str, Any],
+                          current_state: Dict[str, Any]):
         if previous_state['customer']['is_buybox']:
             pass
 
-    async def on_update(self, operation):
+    async def on_update(self, operation: Dict[str, Any]):
         # comparar o e o2
         await super().on_update(operation)
         after_update = self.collection[operation['o2']['_id']]
