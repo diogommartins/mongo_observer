@@ -7,6 +7,8 @@ services:
       - MONGO_DB_NAME=test_db
       - MONGO_MIN_POOLSIZE=50
       - MONGO_MAX_POOLSIZE=150
+    depends_on:
+      - "mongodb-primary"
   mongodb-primary:
     image: 'bitnami/mongodb:latest'
     ports:
