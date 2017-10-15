@@ -1,0 +1,10 @@
+FROM python:alpine
+
+
+ARG CWD=/opt/app
+
+COPY . ${CWD}
+WORKDIR ${CWD}
+
+RUN pip install --no-cache-dir -U -r requirements-dev.txt
+RUN py.test -v --cov=./
