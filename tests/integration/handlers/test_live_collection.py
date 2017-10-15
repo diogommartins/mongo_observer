@@ -58,26 +58,91 @@ class LiveCollectionTests(BaseLiveCollectionTests, asynctest.TestCase):
 
 
 class LiveCollectionFieldUpdateOperatorsTests(BaseLiveCollectionTests,
-                                              asynctest.TestCase):
+                                              ):
     async def setUp(self):
         await super(LiveCollectionFieldUpdateOperatorsTests, self).setUp()
         self.doc = {"dog": "Xablau", 'random_unique_id': uuid4().hex}
         await self.collection.insert_one(self.doc)
 
+
+class SetOperationTests(LiveCollectionFieldUpdateOperatorsTests,
+                        asynctest.TestCase):
     async def test_it_reacts_to_set_update_operations(self):
         await self.observer.observe_changes()
-
         self.assertEqual(self.handler.collection, {self.doc['_id']: self.doc})
 
         await self.collection.update_one({'_id': self.doc['_id']}, {
             "$set": {
-                "candy": "Ursinhos Fini"
+                "dog": "Xena"
             }
         })
 
         await self.observer.observe_changes()
-        self.assertEqual(self.handler.collection[self.doc['_id']]['candy'],
-                         "Ursinhos Fini")
+        self.assertEqual(self.handler.collection[self.doc['_id']]['dog'],
+                         "Xena")
 
-    async def test_it_reacts_to_rename_update_operations(self):
-        pass
+
+class UnsetOperationTests(LiveCollectionFieldUpdateOperatorsTests,
+                          asynctest.TestCase):
+    pass
+
+
+class RenameOperationTests(LiveCollectionFieldUpdateOperatorsTests,
+                           asynctest.TestCase):
+    """
+    A $rename operation is actually a $set and $unset operation
+    """
+    async def test_it_renames_document_key_if_one_exists(self):
+        await self.observer.observe_changes()
+        self.assertEqual(self.handler.collection, {self.doc['_id']: self.doc})
+
+        await self.collection.update_one({'_id': self.doc['_id']}, {
+            "$rename": {
+                "dog": "cat"
+            }
+        })
+
+        await self.observer.observe_changes()
+
+        with self.assertRaises(KeyError):
+            self.handler.collection[self.doc['_id']]['dog']
+
+        self.assertEqual(self.handler.collection[self.doc['_id']]['cat'], "Xablau")
+
+    async def test_it_doesnt_renames_document_key_if_one_doesnt_exists(self):
+        await self.observer.observe_changes()
+        self.assertEqual(self.handler.collection, {self.doc['_id']: self.doc})
+
+        await self.collection.update_one({'_id': self.doc['_id']}, {
+            "$rename": {
+                "cat": "dog"
+            }
+        })
+
+        await self.observer.observe_changes()
+
+    async def test_it_renames_multiple_keys(self):
+        await self.observer.observe_changes()
+        self.assertEqual(self.handler.collection, {self.doc['_id']: self.doc})
+
+        await self.collection.update_one({'_id': self.doc['_id']}, {
+            "$rename": {
+                "dog": "cat",
+                "random_unique_id": "rid"
+            }
+        })
+
+        await self.observer.observe_changes()
+
+        with self.assertRaises(KeyError):
+            self.handler.collection[self.doc['_id']]['dog']
+
+        self.assertEqual(
+            self.handler.collection[self.doc['_id']],
+            {
+                '_id': self.doc['_id'],
+                'cat': self.doc['dog'],
+                'rid': self.doc['random_unique_id']
+            }
+        )
+
