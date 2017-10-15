@@ -1,14 +1,13 @@
 import asyncio
-import asynctest
 from unittest.mock import ANY
+import asynctest
 
-from bson import Timestamp
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from mongo_observer.models import Operations
 from mongo_observer.observer import Observer, ShouldStopObservation
 from mongo_observer.operation_handlers import OperationHandler
-from tests import conf
+from tests.integration import conf
 
 
 class ObserverObserveChangesTests(asynctest.TestCase):
@@ -30,13 +29,10 @@ class ObserverObserveChangesTests(asynctest.TestCase):
         await self.collection.insert_one(self.mock_doc)
         await asyncio.sleep(1)  # wait for `ts` to change
 
-        self.stating_ts = Timestamp(self.mock_doc['_id'].generation_time, 0)
-
         self.observer = await Observer.init_async(
             oplog=self.oplog_collection,
             operation_handler=self.handler,
             namespace_filter=f'{self.db.name}.{self.collection.name}',
-            starting_timestamp=self.stating_ts,
             on_nothing_to_fetch_on_cursor=self.stop_infinite_iteration
         )
 
