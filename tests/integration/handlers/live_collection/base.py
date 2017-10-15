@@ -22,6 +22,7 @@ class BaseLiveCollectionTests:
             namespace_filter=f'{self.db.name}.{self.collection.name}',
             on_nothing_to_fetch_on_cursor=self.stop_infinite_iteration
         )
+        await self.observer.observe_changes()
 
     async def tearDown(self):
         await self.collection.delete_many({})

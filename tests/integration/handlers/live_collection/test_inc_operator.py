@@ -31,9 +31,6 @@ class IncOperationTests(LiveCollectionFieldUpdateOperatorsTests,
     }
 
     async def test_it_increments_existing_values(self):
-        await self.observer.observe_changes()
-        self.assertEqual(self.handler.collection, {self.doc['_id']: self.doc})
-
         await self.collection.update_one({'_id': self.doc['_id']}, {
             "$inc": {
                 "quantity": -2
@@ -64,10 +61,6 @@ class IncOperationTests(LiveCollectionFieldUpdateOperatorsTests,
                                              {"$inc": {"sku": 666}})
 
     async def test_it_increments_existing_nested_values(self):
-        await self.observer.observe_changes()
-        self.assertEqual(self.handler.collection,
-                         {self.doc['_id']: self.doc})
-
         await self.collection.update_one({'_id': self.doc['_id']}, {
             "$inc": {
                 "metrics.orders": 10
@@ -90,10 +83,6 @@ class IncOperationTests(LiveCollectionFieldUpdateOperatorsTests,
         )
 
     async def test_it_creates_nonexisting_values(self):
-        await self.observer.observe_changes()
-        self.assertEqual(self.handler.collection,
-                         {self.doc['_id']: self.doc})
-
         await self.collection.update_one({'_id': self.doc['_id']}, {
             "$inc": {
                 "metrics.likes": 666
