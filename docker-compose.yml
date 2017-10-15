@@ -1,0 +1,17 @@
+version: '3'
+services:
+  app:
+    build: .
+    environment:
+      - MONGO_URI=mongodb://root:root@mongodb-primary:27017
+      - MONGO_DB_NAME=test_db
+      - MONGO_MIN_POOLSIZE=50
+      - MONGO_MAX_POOLSIZE=150
+    depends_on:
+      - "mongodb-primary"
+  mongodb-primary:
+    image: 'bitnami/mongodb:latest'
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGODB_REPLICA_SET_MODE=primary

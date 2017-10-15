@@ -1,25 +1,11 @@
 import abc
-from typing import Dict
+from typing import Dict, Any
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorCollection
-from pathdict import PathDict
 
 from mongo_observer.conf import logger
-
-
-class Operations:
-    INSERT = 'i'
-    UPDATE = 'u'
-    DELETE = 'd'
-    COMMAND = 'c'
-    DB_DECLARE = 'db'
-    NO_OP = 'n'
-
-
-class Document(PathDict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, create_if_not_exists=True)
+from mongo_observer.models import Operations, Document
 
 
 class OperationHandler(metaclass=abc.ABCMeta):
@@ -30,26 +16,60 @@ class OperationHandler(metaclass=abc.ABCMeta):
             Operations.DELETE: self.on_delete
         }
 
-    async def handle(self, operation):
+    async def handle(self, operation: Dict[str, Any]):
         try:
             handler = self.handlers[operation['op']]
         except KeyError:
-            pass  # Unintersting operation
-            print("skipping operation ", operation)
+            logger.debug({'info': 'skipping operation', 'operation': operation})
         else:
             await handler(operation)
 
     @abc.abstractmethod
-    async def on_insert(self, operation):
-        pass
+    async def on_insert(self, operation: Dict[str, Any]):
+        """
+        :param operation: A dict containing a document corresponding
+        to an operation on oplog. It will contain the following keys:
+
+            * `ts`: Timestamp of the operation
+            * `h`: An unique signed long identifier of the operation
+            * `op`: A character representing the type of the operation
+            * `ns`: A namespace string formed with the concatenation
+            of 'database.collection'
+            * `o`: The inserted document
+        """
+        raise NotImplementedError()
 
     @abc.abstractmethod
-    async def on_update(self, operation):
-        pass
+    async def on_update(self, operation: Dict[str, Any]):
+        """
+        :param operation: A dict containing a document corresponding
+        to an operation on oplog. It will contain the following keys:
+
+            * `ts`: Timestamp of the operation
+            * `h`: An unique signed long identifier of the operation
+            * `op`: A character representing the type of the operation
+            * `ns`: A namespace string formed with the concatenation
+            of 'database.collection'
+            * `o`: The operation data performed on the document
+            * `o2`: A dict with a single _id key of the document to be updated
+        """
+        raise NotImplementedError()
 
     @abc.abstractmethod
-    async def on_delete(self, operation):
-        pass
+    async def on_delete(self, operation: Dict[str, Any]):
+        """
+        :param operation: A dict containing a document corresponding
+        to an operation on oplog. It will contain the following keys:
+
+            * `ts`: Timestamp of the operation
+            * `h`: An unique signed long identifier of the operation
+            * `op`: A character representing the type of the operation
+            * `ns`: A namespace string formed with the concatenation
+            of 'database.collection'
+            * `o`: The operation data performed on the document
+            * `o2`: A dict with a single _id key, of the deleted document
+        """
+        raise NotImplementedError()
 
 
 class LiveCollection(OperationHandler):
@@ -66,7 +86,7 @@ class LiveCollection(OperationHandler):
         collection = {doc['_id']: Document(doc) async for doc in cursor}
         return cls(collection, remote_collection)
 
-    async def on_update(self, operation):
+    async def on_update(self, operation: Dict[str, Any]):
         doc = self.collection[operation['o2']['_id']]
         change = operation['o']
         if '$set' in change:
@@ -74,29 +94,28 @@ class LiveCollection(OperationHandler):
             logger.debug({'action': 'update', 'change': change['$set']})
         return doc
 
-    async def on_insert(self, operation):
+    async def on_insert(self, operation: Dict[str, Any]):
         doc = operation['o']
         self.collection[doc['_id']] = Document(doc)
         return doc
 
-    async def on_delete(self, operation):
+    async def on_delete(self, operation: Dict[str, Any]):
         doc = operation['o']
         del self.collection[doc['_id']]
 
 
 class BuyboxChangeNotifier(LiveCollection):
-    def get_buybox_change(self, previous_state, current_state):
-        if before_update['customer']['is_buybox']:
+    def get_buybox_change(self,
+                          previous_state: Dict[str, Any],
+                          current_state: Dict[str, Any]):
+        if previous_state['customer']['is_buybox']:
             pass
 
-    async def on_update(self, operation):
+    async def on_update(self, operation: Dict[str, Any]):
         # comparar o e o2
-        before_update = self.collection[operation['o2']['_id']].copy()
         await super().on_update(operation)
-
         after_update = self.collection[operation['o2']['_id']]
-        if before_update['customer']['is_buybox'] != after_update['customer']['is_buybox']:
-            if after_update['customer']['is_buybox'] is True:
-                print("Ganhou buybox")
-            else:
-                print("Perdeu buybox")
+        if after_update['customer']['is_buybox'] is True:
+            print("Ganhou buybox")
+        else:
+            print("Perdeu buybox")
