@@ -85,4 +85,4 @@ class Observer:
                     await self.on_nothing_to_fetch_on_cursor()
         except ShouldStopObservation:
             self.logger.debug('Stopping observer')
-            raise
+            return
