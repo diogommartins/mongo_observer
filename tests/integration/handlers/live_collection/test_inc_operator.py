@@ -1,4 +1,5 @@
 import asynctest
+import pymongo
 
 from tests.integration.handlers.live_collection.base import \
     LiveCollectionFieldUpdateOperatorsTests
@@ -6,6 +7,20 @@ from tests.integration.handlers.live_collection.base import \
 
 class IncOperationTests(LiveCollectionFieldUpdateOperatorsTests,
                         asynctest.TestCase):
+    """
+    $inc
+    The $inc operator increments a field by a specified value and has
+    the following form:
+        `{ $inc: { <field1>: <amount1>, <field2>: <amount2>, ... } }`
+
+    Behavior
+
+    * The $inc operator accepts positive and negative values.
+    * If the field does not exist, $inc creates the field and sets the field to
+    the specified value.
+    * Use of the $inc operator on a field with a null value will generate an error.
+    * $inc is an atomic operation within a single document.
+    """
     template_doc = {
         "sku": "Xablau",
         "quantity": 10,
@@ -39,6 +54,14 @@ class IncOperationTests(LiveCollectionFieldUpdateOperatorsTests,
                 }
             }
         )
+
+    async def test_inc_on_null_value_field(self):
+        await self.collection.update_one({"_id": self.doc['_id']},
+                                         {"$set": {"sku": None}})
+
+        with self.assertRaises(pymongo.errors.WriteError):
+            await self.collection.update_one({"_id": self.doc['_id']},
+                                             {"$inc": {"sku": 666}})
 
     async def test_it_increments_existing_nested_values(self):
         await self.observer.observe_changes()
