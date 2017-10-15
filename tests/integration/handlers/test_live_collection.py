@@ -9,7 +9,7 @@ from mongo_observer.operation_handlers import LiveCollection
 from tests.integration import conf
 
 
-class LiveCollectionTests(asynctest.TestCase):
+class BaseLiveCollectionTests:
     async def setUp(self):
         self.client = AsyncIOMotorClient(**conf.MONGO_CONN_PARAMS)
         self.oplog_db = self.client[conf.OPLOG_DATABASE]
@@ -31,45 +31,53 @@ class LiveCollectionTests(asynctest.TestCase):
     async def stop_infinite_iteration(self):
         raise ShouldStopObservation
 
-    async def observe_and_stop(self):
-        with self.assertRaises(ShouldStopObservation):
-            await self.observer.observe_changes()
 
+class LiveCollectionTests(BaseLiveCollectionTests, asynctest.TestCase):
     async def test_collection_starts_empty(self):
+        await self.observer.observe_changes()
         self.assertEqual(self.handler.collection, {})
 
     async def test_it_reacts_to_insert_operations(self):
         doc = {"candy": "Minhocas Fini", 'rid': uuid4().hex}
         await self.collection.insert_one(doc)
 
-        await self.observe_and_stop()
+        await self.observer.observe_changes()
         self.assertEqual(self.handler.collection, {doc['_id']: doc})
 
     async def test_it_reacts_to_delete_operations(self):
         doc = {"candy": "Minhocas Fini", 'rid': uuid4().hex}
         await self.collection.insert_one(doc)
 
-        await self.observe_and_stop()
+        await self.observer.observe_changes()
         self.assertEqual(self.handler.collection, {doc['_id']: doc})
 
         await self.collection.delete_one({"_id": doc['_id']})
 
-        await self.observe_and_stop()
+        await self.observer.observe_changes()
         self.assertEqual(self.handler.collection, {})
 
+
+class LiveCollectionFieldUpdateOperatorsTests(BaseLiveCollectionTests,
+                                              asynctest.TestCase):
+    async def setUp(self):
+        await super(LiveCollectionFieldUpdateOperatorsTests, self).setUp()
+        self.doc = {"dog": "Xablau", 'random_unique_id': uuid4().hex}
+        await self.collection.insert_one(self.doc)
+
     async def test_it_reacts_to_set_update_operations(self):
-        doc = {"candy": "Minhocas Fini", 'rid': uuid4().hex}
-        await self.collection.insert_one(doc)
+        await self.observer.observe_changes()
 
-        await self.observe_and_stop()
-        self.assertEqual(self.handler.collection, {doc['_id']: doc})
+        self.assertEqual(self.handler.collection, {self.doc['_id']: self.doc})
 
-        await self.collection.update_one({'_id': doc['_id']}, {
+        await self.collection.update_one({'_id': self.doc['_id']}, {
             "$set": {
                 "candy": "Ursinhos Fini"
             }
         })
 
-        await self.observe_and_stop()
-        self.assertEqual(self.handler.collection[doc['_id']]['candy'],
+        await self.observer.observe_changes()
+        self.assertEqual(self.handler.collection[self.doc['_id']]['candy'],
                          "Ursinhos Fini")
+
+    async def test_it_reacts_to_rename_update_operations(self):
+        pass
