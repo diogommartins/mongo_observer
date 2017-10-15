@@ -2,6 +2,7 @@ from pymongo import DESCENDING, CursorType
 from asynctest import TestCase, CoroutineMock, Mock, patch, call
 
 from mongo_observer.observer import Observer, ShouldStopObservation
+from tests.unit.utils import AsyncIterMockCursor
 
 
 class ObserverTests(TestCase):
@@ -61,10 +62,8 @@ class ObserverObserveChangesTests(TestCase):
         raise ShouldStopObservation()
 
     async def test_it_calls_handler_if_theres_a_document_to_fetch_on_cursor(self):
-        cursor = CoroutineMock(next_object=Mock())
-        cursor.fetch_next = CoroutineMock(return_value=True)()
         document = Mock()
-        cursor.next_object.return_value = document
+        cursor = AsyncIterMockCursor([document])
 
         with patch.object(self.observer, 'get_new_cursor', return_value=cursor):
             with self.assertRaises(ShouldStopObservation):
@@ -73,10 +72,7 @@ class ObserverObserveChangesTests(TestCase):
             self.handler.handle.assert_called_once_with(operation=document)
 
     async def test_it_doesnt_call_handler_if_theres_nothing_to_fetch_on_cursor(self):
-        cursor = CoroutineMock(next_object=Mock())
-        cursor.fetch_next = CoroutineMock(return_value=False)()
-        document = Mock()
-        cursor.next_object.return_value = document
+        cursor = AsyncIterMockCursor([])
 
         with patch.object(self.observer, 'get_new_cursor', return_value=cursor):
             with self.assertRaises(ShouldStopObservation):
