@@ -2,7 +2,7 @@ from uuid import uuid4
 
 import asynctest
 
-from tests.integration.handlers.live_collection.base import BaseLiveCollectionTests
+from tests.integration.handlers.base import BaseLiveCollectionTests
 
 
 class LiveCollectionTests(BaseLiveCollectionTests, asynctest.TestCase):
