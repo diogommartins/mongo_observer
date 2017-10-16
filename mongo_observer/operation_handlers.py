@@ -91,7 +91,6 @@ class LiveCollection(OperationHandler):
         change = operation['o']
         if '$set' in change:
             doc.update(change['$set'])
-            logger.debug({'action': 'update', 'change': change['$set']})
         if '$unset' in change:
             for key, _ in change['$unset'].items():
                 doc.pop(key, None)
