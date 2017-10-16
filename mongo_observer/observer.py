@@ -66,6 +66,9 @@ class Observer:
                    on_nothing_to_fetch_on_cursor)
 
     def get_new_cursor(self):
+        if self.operation_handler.last_timestamp:
+            self.filter['ts']['$gt'] = self.operation_handler.last_timestamp
+
         return self.oplog.find(self.filter,
                                cursor_type=CursorType.TAILABLE_AWAIT)
 
