@@ -42,15 +42,11 @@ class ObserverObserveChangesTests(asynctest.TestCase):
     async def stop_infinite_iteration(self):
         raise ShouldStopObservation
 
-    async def observe_and_stop(self):
-        with self.assertRaises(ShouldStopObservation):
-            await self.observer.observe_changes()
-
     async def test_it_observes_insert_operations(self):
         doc = {'name': 'Xablau', 'age': 2}
         await self.collection.insert_one(doc)
 
-        await self.observe_and_stop()
+        await self.observer.observe_changes()
 
         self.handler.on_delete.assert_not_called()
         self.handler.on_update.assert_not_called()
@@ -70,7 +66,7 @@ class ObserverObserveChangesTests(asynctest.TestCase):
         update_op = {"$set": {"author": "Xablau"}}
         res = await self.collection.update_one({'_id': self.mock_doc['_id']}, update_op)
 
-        await self.observe_and_stop()
+        await self.observer.observe_changes()
 
         self.handler.on_delete.assert_not_called()
         self.handler.on_insert.assert_not_called()
@@ -90,7 +86,7 @@ class ObserverObserveChangesTests(asynctest.TestCase):
     async def test_it_observes_delete_operations(self):
         res = await self.collection.delete_one({"_id": self.mock_doc['_id']})
 
-        await self.observe_and_stop()
+        await self.observer.observe_changes()
 
         self.handler.on_update.assert_not_called()
         self.handler.on_insert.assert_not_called()
@@ -113,7 +109,7 @@ class ObserverObserveChangesTests(asynctest.TestCase):
         delete_result = await self.collection.delete_many({'dog': 'Xablau'})
         self.assertEqual(len(insert_result.inserted_ids), delete_result.deleted_count)
 
-        await self.observe_and_stop()
+        await self.observer.observe_changes()
 
         self.handler.on_update.assert_not_called()
 
