@@ -1,7 +1,7 @@
 import abc
 from typing import Dict, Any
 
-from bson import ObjectId
+from bson import ObjectId, Timestamp
 from motor.motor_asyncio import AsyncIOMotorCollection
 
 from mongo_observer.conf import logger
@@ -15,9 +15,11 @@ class OperationHandler(metaclass=abc.ABCMeta):
             Operations.UPDATE: self.on_update,
             Operations.DELETE: self.on_delete
         }
+        self.last_timestamp: Timestamp = None
 
     async def handle(self, operation: Dict[str, Any]):
         try:
+            self.last_timestamp = operation['ts']
             handler = self.handlers[operation['op']]
         except KeyError:
             logger.debug({'info': 'skipping operation', 'operation': operation})

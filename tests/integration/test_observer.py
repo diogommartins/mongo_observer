@@ -1,6 +1,7 @@
 import asyncio
 from unittest.mock import ANY
 import asynctest
+from bson import Timestamp
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -41,6 +42,24 @@ class ObserverObserveChangesTests(asynctest.TestCase):
 
     async def stop_infinite_iteration(self):
         raise ShouldStopObservation
+
+    async def test_it_updates_last_timestamp_each_time_it_handles_an_operation(self):
+        self.assertIsNone(self.observer.operation_handler.last_timestamp)
+
+        doc = {'name': 'Xablau', 'age': 2}
+        await self.collection.insert_one(doc)
+
+        await self.observer.observe_changes()
+        ts1 = self.observer.operation_handler.last_timestamp
+        self.assertIsInstance(ts1, Timestamp)
+
+        await self.collection.delete_one({'_id': doc['_id']})
+
+        await self.observer.observe_changes()
+        ts2 = self.observer.operation_handler.last_timestamp
+        self.assertIsInstance(ts2, Timestamp)
+
+        self.assertGreater(ts2, ts1)
 
     async def test_it_observes_insert_operations(self):
         doc = {'name': 'Xablau', 'age': 2}
