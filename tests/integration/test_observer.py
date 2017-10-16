@@ -155,3 +155,17 @@ class ObserverObserveChangesTests(asynctest.TestCase):
                     'ns': self.observer.namespace_filter
                 }
             )
+
+    async def test_it_uses_last_handled_document_timestamp_when_fetching_a_new_cursor(self):
+        ts1 = self.observer.filter['ts']['$gt']
+
+        await self.collection.insert_one({'dog': 'Xablau'})
+        await self.observer.observe_changes()
+
+        ts2 = self.observer.filter['ts']['$gt']
+        self.assertEqual(ts1, ts2)
+
+        await self.observer.observe_changes()
+        ts3 = self.observer.filter['ts']['$gt']
+
+        self.assertGreater(ts3, ts2)
