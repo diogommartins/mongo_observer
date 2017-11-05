@@ -91,6 +91,9 @@ loop.run_until_complete(run(loop))
 loop.run_forever()
 ```
 
-`reactive_collection` 
+init_async behaviour - todo
+after observe_changes behavior - todo
 
 ### ReactivePartialCollection
+
+to-do
