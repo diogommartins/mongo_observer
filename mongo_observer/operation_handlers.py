@@ -1,8 +1,10 @@
 import abc
 from typing import Dict, Any
 
+import asyncio
 from bson import ObjectId, Timestamp
 from motor.motor_asyncio import AsyncIOMotorCollection
+from pymongo import CursorType
 
 from mongo_observer.conf import logger
 from mongo_observer.models import Operations, Document
@@ -74,7 +76,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
 
-class LiveCollection(OperationHandler):
+class ReactiveCollection(OperationHandler):
     def __init__(self,
                  collection: Dict[ObjectId, Dict],
                  remote_collection: AsyncIOMotorCollection):
@@ -106,20 +108,3 @@ class LiveCollection(OperationHandler):
     async def on_delete(self, operation: Dict[str, Any]):
         doc = operation['o']
         del self.collection[doc['_id']]
-
-
-class BuyboxChangeNotifier(LiveCollection):
-    def get_buybox_change(self,
-                          previous_state: Dict[str, Any],
-                          current_state: Dict[str, Any]):
-        if previous_state['customer']['is_buybox']:
-            pass
-
-    async def on_update(self, operation: Dict[str, Any]):
-        # comparar o e o2
-        await super().on_update(operation)
-        after_update = self.collection[operation['o2']['_id']]
-        if after_update['customer']['is_buybox'] is True:
-            print("Ganhou buybox")
-        else:
-            print("Perdeu buybox")
