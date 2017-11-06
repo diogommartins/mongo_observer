@@ -54,7 +54,7 @@ operation on oplog. It will contain the following keys:
 * `op`: A character representing the type of the operation
 * `ns`: A namespace string formed with the concatenation
 of 'database.collection'
-* `o`: A dict with a single _id key, of the deleted document
+* `o`: A dict with a single _id key, of the ddeleted document
 
 
 ## ReactiveCollection
@@ -90,8 +90,10 @@ loop.run_until_complete(run(loop))
 loop.run_forever()
 ```
 
-init_async behaviour - todo
-after observe_changes behavior - todo
+Once `ReactiveCollection.init_async` runs, it will perform an initial sync with
+the remote collection. We then connect it as the `operation_handler` of an 
+`Observer`, and we are ready to `observe_changes` to the current state of the 
+collection.
 
 ### ReactivePartialCollection
 
