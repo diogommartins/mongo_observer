@@ -54,8 +54,7 @@ operation on oplog. It will contain the following keys:
 * `op`: A character representing the type of the operation
 * `ns`: A namespace string formed with the concatenation
 of 'database.collection'
-* `o`: The operation data performed on the document
-* `o2`: A dict with a single _id key, of the deleted document
+* `o`: A dict with a single _id key, of the deleted document
 
 
 ## ReactiveCollection

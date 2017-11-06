@@ -34,7 +34,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
         :param operation: A dict containing a document corresponding
         to an operation on oplog. It will contain the following keys:
 
-            * `ts`: Timestamp of the operation
+            * `ts`: Timestamp of the operationa
             * `h`: An unique signed long identifier of the operation
             * `op`: A character representing the type of the operation
             * `ns`: A namespace string formed with the concatenation
@@ -54,8 +54,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
             * `op`: A character representing the type of the operation
             * `ns`: A namespace string formed with the concatenation
             of 'database.collection'
-            * `o`: The operation data performed on the document
-            * `o2`: A dict with a single _id key of the document to be updated
+            * `o`: A dict with a single _id key of the document to be updated
         """
         raise NotImplementedError()
 
