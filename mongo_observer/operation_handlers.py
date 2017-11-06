@@ -1,8 +1,10 @@
 import abc
 from typing import Dict, Any
 
+import asyncio
 from bson import ObjectId, Timestamp
 from motor.motor_asyncio import AsyncIOMotorCollection
+from pymongo import CursorType
 
 from mongo_observer.conf import logger
 from mongo_observer.models import Operations, Document
@@ -32,7 +34,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
         :param operation: A dict containing a document corresponding
         to an operation on oplog. It will contain the following keys:
 
-            * `ts`: Timestamp of the operation
+            * `ts`: Timestamp of the operationa
             * `h`: An unique signed long identifier of the operation
             * `op`: A character representing the type of the operation
             * `ns`: A namespace string formed with the concatenation
@@ -52,8 +54,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
             * `op`: A character representing the type of the operation
             * `ns`: A namespace string formed with the concatenation
             of 'database.collection'
-            * `o`: The operation data performed on the document
-            * `o2`: A dict with a single _id key of the document to be updated
+            * `o`: A dict with a single _id key of the document to be updated
         """
         raise NotImplementedError()
 
@@ -74,7 +75,7 @@ class OperationHandler(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
 
-class LiveCollection(OperationHandler):
+class ReactiveCollection(OperationHandler):
     def __init__(self,
                  collection: Dict[ObjectId, Dict],
                  remote_collection: AsyncIOMotorCollection):
@@ -106,20 +107,3 @@ class LiveCollection(OperationHandler):
     async def on_delete(self, operation: Dict[str, Any]):
         doc = operation['o']
         del self.collection[doc['_id']]
-
-
-class BuyboxChangeNotifier(LiveCollection):
-    def get_buybox_change(self,
-                          previous_state: Dict[str, Any],
-                          current_state: Dict[str, Any]):
-        if previous_state['customer']['is_buybox']:
-            pass
-
-    async def on_update(self, operation: Dict[str, Any]):
-        # comparar o e o2
-        await super().on_update(operation)
-        after_update = self.collection[operation['o2']['_id']]
-        if after_update['customer']['is_buybox'] is True:
-            print("Ganhou buybox")
-        else:
-            print("Perdeu buybox")
