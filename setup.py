@@ -12,7 +12,7 @@ def read(fname):
 setup(
     name='mongo_observer',
     version=VERSION,
-    packages=find_packages(exclude=['*test*']),
+    packages=find_packages(exclude=['*test*', '*examples*']),
     url='https://github.com/diogommartins/mongo_observer',
     author='Diogo Magalhaes Martins',
     author_email='magalhaesmartins@icloud.com',
