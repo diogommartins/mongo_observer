@@ -3,7 +3,10 @@ python:
   - "3.6"
 # command to install dependencies
 install:
+  - pip3 install coveralls
   - pip3 install -r requirements.txt
 # command to run tests
 script:
   - py.test -v tests/unit/
+after_success:
+  - coveralls
